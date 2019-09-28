@@ -16,6 +16,7 @@ import java.util.Stack;
 
 public class SnackVendingMachine extends FoodVendingMachine {
 
+    public ArrayList<String> boughtItems = new ArrayList<>();
     public final int MAX_SIZE = 5;
     public final int COLS = 5;
     public final int ROWS = 5;
@@ -76,7 +77,13 @@ public class SnackVendingMachine extends FoodVendingMachine {
             }
         }
         catch (OutOfStockException e){
-            resetWaitingOrderState();
+            display.setCurrentDisplay("ITEM OUT");
+            resetTheChoice();
+        }
+        catch (NeedChoiceException e){
+            display.setCurrentDisplay("CHOOSE FIRST");
+            resetTheChoice();
+
         }
 
 
@@ -101,73 +108,95 @@ public class SnackVendingMachine extends FoodVendingMachine {
 
     public ArrayList<PaymentMethod> cancelOrder(){
         if(machineState == states.WAITING_MONEY){
-            resetWaitingOrderState();
+            resetTheChoice();
+            machineState = states.WAITING_ORDER;
+            display.setCurrentDisplay("WAITING ORDER");
+            System.out.println(" Order Cancelled");
             paymentSystem.setRequiredMoney(0);
         }
         return paymentSystem.refundAll();
     }
 
     public ArrayList<Coin> refundCoins(){
-        return paymentSystem.refundCoins();
+        ArrayList<Coin> coins = paymentSystem.refundCoins();
+        display.setCurrentDisplay("Inserted "+paymentSystem.getTotalInsertedMoney());
+        return coins;
     }
 
     public ArrayList<Note> refundNotes(){
-        return paymentSystem.refundNotes();
+        ArrayList<Note> notes = paymentSystem.refundNotes();
+        display.setCurrentDisplay("Inserted "+paymentSystem.getTotalInsertedMoney());
+        return notes;
     }
 
     public Card refundCard(){
-        return paymentSystem.refundCard();
+        Card card = paymentSystem.refundCard();
+        display.setCurrentDisplay("Inserted "+paymentSystem.getTotalInsertedMoney());
+        return card;
     }
 
-    public void insertCoin(Coin coin) throws Exception {
+    public double insertCoin(Coin coin) throws Exception {
+        double change = 0;
         if (machineState == states.WAITING_MONEY){
             double totalInsertedMoney = paymentSystem.insertCoin(coin);
             display.setCurrentDisplay("Inserted " + totalInsertedMoney);
-            isEnoughMoneyInserted();
+            change = isEnoughMoneyInserted();
         }
         else
             System.out.println("Not accepted, you can insert coins after selecting order");
+
+        return change;
     }
 
-    public void insertNote(Note note) throws Exception {
+    public double insertNote(Note note) throws Exception {
+        double change = 0;
         if (machineState == states.WAITING_MONEY){
             double totalInsertedMoney = paymentSystem.insertNote(note);
             display.setCurrentDisplay("Inserted " + totalInsertedMoney);
-            isEnoughMoneyInserted();
+            change = isEnoughMoneyInserted();
         }
         else
             System.out.println("Not accepted, you can insert notes after selecting order");
+        return change;
     }
 
-    public void insertCard(Card card) throws Exception {
+    public double insertCard(Card card) throws Exception {
+        double change = 0;
         if (machineState == states.WAITING_MONEY){
             double totalInsertedMoney = paymentSystem.insertCard(card);
             display.setCurrentDisplay("Inserted " + totalInsertedMoney);
-            isEnoughMoneyInserted();
+            change = isEnoughMoneyInserted();
         }
         else
             System.out.println("Not accepted, you can insert card after selecting order");
+        return change;
     }
 
-    private void isEnoughMoneyInserted(){
+    private double isEnoughMoneyInserted() throws InterruptedException {
         double totalInsertedMoney = paymentSystem.getTotalInsertedMoney();
         double requiredMoney = paymentSystem.getRequiredMoney();
-
+        double change = 0;
         if(totalInsertedMoney >= requiredMoney )
         {
-            System.out.println("pending item: "+ inventory[chosenRow-'A'][chosenCol-'1'].pop());
-            System.out.println("your change = " + (totalInsertedMoney-requiredMoney));
-            resetWaitingOrderState();
+            System.out.println(getDisplay());
+            change = totalInsertedMoney-requiredMoney;
+            String item = (String) inventory[chosenRow-'A'][chosenCol-'1'].pop();
+            boughtItems.add(item);
+            display.setCurrentDisplay("your change = " + change);
+            System.out.println("your change = " + change);
+            Thread.sleep(4000);
+            display.setCurrentDisplay("WAITING ORDER");
+            resetTheChoice();
             machineState = states.WAITING_ORDER;
             paymentSystem.setRequiredMoney(0);
             paymentSystem.refundAll();
         }
+        return change;
     }
 
-    private void resetWaitingOrderState(){
+    private void resetTheChoice(){
         chosenCol='_';
         chosenRow='_';
-        display.setCurrentDisplay("WAITING ORDER");
     }
 
     private void rowButtonAction( String key){
@@ -217,5 +246,9 @@ public class SnackVendingMachine extends FoodVendingMachine {
 
         Stack inventorySlot = inventory[row][col];
         return inventorySlot.toString() +  "(size="+inventorySlot.size()+")";
+    }
+
+    public String getDisplay(){
+        return display.getCurrentDisplay();
     }
 }

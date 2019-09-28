@@ -16,7 +16,7 @@ public class FoodVendingMachineFactoryTest {
         FoodVendingMachine foodVendingMachine = foodVendingMachineFactory.buildMachine(
                 foodVendingMachineFactory.SNACK_VENDING_MACHINE);
 
-        assertEquals( true, foodVendingMachine instanceof SnackVendingMachine);
+        assertTrue(foodVendingMachine instanceof SnackVendingMachine);
         assertNotEquals(null, foodVendingMachineFactory);
         assertThrows(NotImplementedException.class, () -> {
             foodVendingMachineFactory.buildMachine(foodVendingMachineFactory.SANDWICH_VENDING_MACHINE);

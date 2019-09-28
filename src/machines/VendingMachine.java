@@ -9,7 +9,6 @@ public abstract class VendingMachine {
     protected static enum states{
         WAITING_ORDER,
         WAITING_MONEY,
-        PENDING,
     }
     protected Keypad keypad;
     protected Display display;
